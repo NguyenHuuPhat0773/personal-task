@@ -51,9 +51,7 @@ public class PersonalTaskManager{
      * @param isRecurring Boolean có phải là nhiệm vụ lặp lại không.
      * @return JSONObject của nhiệm vụ đã thêm, hoặc null nếu có lỗi.
      */
-    public JSONObject addNewTaskWithViolations(String title, String description,
-                                               String dueDateStr, String priorityLevel,
-                                               boolean isRecurring) {
+    public JSONObject addNewTaskWithViolations(String title, String description, String dueDateStr, PriorityLevel priorityLevel, boolean isRecurring) {
 
         if (!isTitleValid(title)) {
             System.out.println("Lỗi: Tiêu đề không được để trống.");
@@ -66,19 +64,6 @@ public class PersonalTaskManager{
             System.out.println("Lỗi: " + e.getMessage());
             return null;
         }
-        String[] validPriorities = {"Thấp", "Trung bình", "Cao"};
-        boolean isValidPriority = false;
-        for (String validP : validPriorities) {
-            if (validP.equals(priorityLevel)) {
-                isValidPriority = true;
-                break;
-            }
-        }
-        if (!isValidPriority) {
-            System.out.println("Lỗi: Mức độ ưu tiên không hợp lệ. Vui lòng chọn từ: Thấp, Trung bình, Cao.");
-            return null;
-        }
-
         // Tải dữ liệu
         JSONArray tasks = loadTasksFromDb();
 
@@ -99,7 +84,7 @@ public class PersonalTaskManager{
         newTask.put("title", title);
         newTask.put("description", description);
         newTask.put("due_date", dueDate.format(DATE_FORMATTER));
-        newTask.put("priority", priorityLevel);
+        newTask.put("priority", priorityLevel.getDisplay());
         newTask.put("status", "Chưa hoàn thành");
         newTask.put("created_at", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         newTask.put("last_updated_at", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
@@ -133,7 +118,7 @@ public class PersonalTaskManager{
             "Mua sách",
             "Sách Công nghệ phần mềm.",
             "2025-07-20",
-            "Cao",
+            PriorityLevel.fromString("Cao"),
             false
         );
 
@@ -172,3 +157,28 @@ private LocalDate parseDueDate(String dueDateStr) {
         throw new IllegalArgumentException("Ngày đến hạn không hợp lệ. Vui lòng sử dụng định dạng YYYY-MM-DD.");
     }
 }
+public enum PriorityLevel {
+    THAP("Thấp"),
+    TRUNG_BINH("Trung bình"),
+    CAO("Cao");
+
+    private final String display;
+
+    PriorityLevel(String display) {
+        this.display = display;
+    }
+
+    public String getDisplay() {
+        return display;
+    }
+
+    public static PriorityLevel fromDisplay(String display) {
+        for (PriorityLevel level : values()) {
+            if (level.display.equalsIgnoreCase(display)) {
+                return level;
+            }
+        }
+        throw new IllegalArgumentException("Mức độ ưu tiên không hợp lệ: " + display);
+    }
+}
+
