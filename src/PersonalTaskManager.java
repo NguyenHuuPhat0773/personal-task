@@ -68,13 +68,9 @@ public class PersonalTaskManager{
         JSONArray tasks = loadTasksFromDb();
 
         // Kiểm tra trùng lặp
-        for (Object obj : tasks) {
-            JSONObject existingTask = (JSONObject) obj;
-            if (existingTask.get("title").toString().equalsIgnoreCase(title) &&
-                existingTask.get("due_date").toString().equals(dueDate.format(DATE_FORMATTER))) {
-                System.out.println(String.format("Lỗi: Nhiệm vụ '%s' đã tồn tại với cùng ngày đến hạn.", title));
-                return null;
-            }
+        if (isDuplicateTask(tasks, title, dueDate.format(DATE_FORMATTER))) {
+            System.out.println(String.format("Lỗi: Nhiệm vụ '%s' đã tồn tại với cùng ngày đến hạn.", title));
+            return null;
         }
 
         String taskId = UUID.randomUUID().toString(); // YAGNI: Có thể dùng số nguyên tăng dần đơn giản hơn.
@@ -101,6 +97,7 @@ public class PersonalTaskManager{
         System.out.println(String.format("Đã thêm nhiệm vụ mới thành công với ID: %s", taskId));
         return newTask;
     }
+    
 
     public static void main(String[] args) {
         PersonalTaskManagerViolations manager = new PersonalTaskManagerViolations();
@@ -180,5 +177,17 @@ public enum PriorityLevel {
         }
         throw new IllegalArgumentException("Mức độ ưu tiên không hợp lệ: " + display);
     }
+}
+private boolean isDuplicateTask(JSONArray tasks, String title, String dueDateStr) {
+    for (Object obj : tasks) {
+        JSONObject task = (JSONObject) obj;
+        String existingTitle = task.get("title").toString();
+        String existingDueDate = task.get("due_date").toString();
+
+        if (existingTitle.equalsIgnoreCase(title) && existingDueDate.equals(dueDateStr)) {
+            return true;
+        }
+    }
+    return false;
 }
 
