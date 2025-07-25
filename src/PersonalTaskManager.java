@@ -75,26 +75,15 @@ public class PersonalTaskManager{
 
         String taskId = UUID.randomUUID().toString(); // YAGNI: Có thể dùng số nguyên tăng dần đơn giản hơn.
 
-        JSONObject newTask = new JSONObject();
-        newTask.put("id", taskId);
-        newTask.put("title", title);
-        newTask.put("description", description);
-        newTask.put("due_date", dueDate.format(DATE_FORMATTER));
-        newTask.put("priority", priorityLevel.getDisplay());
-        newTask.put("status", "Chưa hoàn thành");
-        newTask.put("created_at", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-        newTask.put("last_updated_at", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-        newTask.put("is_recurring", isRecurring); // YAGNI: Thêm thuộc tính này dù chưa có chức năng xử lý nhiệm vụ lặp lại
-        if (isRecurring) {
-            newTask.put("recurrence_pattern", "Chưa xác định");
-        }
+        JSONObject newTask = createTaskJson(title, description, dueDate, priorityLevel, isRecurring);
 
         tasks.add(newTask);
 
         // Lưu dữ liệu
         saveTasksToDb(tasks);
 
-        System.out.println(String.format("Đã thêm nhiệm vụ mới thành công với ID: %s", taskId));
+        System.out.println(String.format("Đã thêm nhiệm vụ mới thành công với ID: %s", newTask.get("id")));
+
         return newTask;
     }
     
@@ -139,55 +128,77 @@ public class PersonalTaskManager{
     }
 }
 // Kiểm tra tiêu đề có hợp lệ không (không null, không trống)
-private boolean isTitleValid(String title) {
-    return title != null && !title.trim().isEmpty();
-}
+    private boolean isTitleValid(String title) {
+        return title != null && !title.trim().isEmpty();
+    }
 
 // Parse ngày đến hạn từ chuỗi sang LocalDate, ném lỗi nếu không hợp lệ
-private LocalDate parseDueDate(String dueDateStr) {
-    if (dueDateStr == null || dueDateStr.trim().isEmpty()) {
-        throw new IllegalArgumentException("Ngày đến hạn không được để trống.");
-    }
-    try {
-        return LocalDate.parse(dueDateStr, DATE_FORMATTER);
-    } catch (DateTimeParseException e) {
-        throw new IllegalArgumentException("Ngày đến hạn không hợp lệ. Vui lòng sử dụng định dạng YYYY-MM-DD.");
-    }
-}
-public enum PriorityLevel {
-    THAP("Thấp"),
-    TRUNG_BINH("Trung bình"),
-    CAO("Cao");
+    private LocalDate parseDueDate(String dueDateStr) {
+        if (dueDateStr == null || dueDateStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Ngày đến hạn không được để trống.");
+        }
+        try {
+            return LocalDate.parse(dueDateStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Ngày đến hạn không hợp lệ. Vui lòng sử dụng định dạng YYYY-MM-DD.");
+        }
+    }
+    public enum PriorityLevel {
+        THAP("Thấp"),
+        TRUNG_BINH("Trung bình"),
+        CAO("Cao");
 
-    private final String display;
+        private final String display;
 
-    PriorityLevel(String display) {
-        this.display = display;
-    }
+        PriorityLevel(String display) {
+            this.display = display;
+        }
 
-    public String getDisplay() {
-        return display;
-    }
+        public String getDisplay() {
+            return display;
+        }
 
-    public static PriorityLevel fromDisplay(String display) {
-        for (PriorityLevel level : values()) {
-            if (level.display.equalsIgnoreCase(display)) {
-                return level;
-            }
-        }
-        throw new IllegalArgumentException("Mức độ ưu tiên không hợp lệ: " + display);
-    }
-}
-private boolean isDuplicateTask(JSONArray tasks, String title, String dueDateStr) {
-    for (Object obj : tasks) {
-        JSONObject task = (JSONObject) obj;
-        String existingTitle = task.get("title").toString();
-        String existingDueDate = task.get("due_date").toString();
+        public static PriorityLevel fromDisplay(String display) {
+            for (PriorityLevel level : values()) {
+                if (level.display.equalsIgnoreCase(display)) {
+                    return level;
+                }
+            }
+            throw new IllegalArgumentException("Mức độ ưu tiên không hợp lệ: " + display);
+        }
+    }
+    private boolean isDuplicateTask(JSONArray tasks, String title, String dueDateStr) {
+        for (Object obj : tasks) {
+            JSONObject task = (JSONObject) obj;
+            String existingTitle = task.get("title").toString();
+            String existingDueDate = task.get("due_date").toString();
 
-        if (existingTitle.equalsIgnoreCase(title) && existingDueDate.equals(dueDateStr)) {
-            return true;
-        }
-    }
-    return false;
-}
+            if (existingTitle.equalsIgnoreCase(title) && existingDueDate.equals(dueDateStr)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private JSONObject createTaskJson(String title, String description, LocalDate dueDate, PriorityLevel priorityLevel, boolean isRecurring) {
+        String taskId = UUID.randomUUID().toString();
+        LocalDateTime now = LocalDateTime.now();
+
+        JSONObject task = new JSONObject();
+        task.put("id", taskId);
+        task.put("title", title);
+        task.put("description", description);
+        task.put("due_date", dueDate.format(DATE_FORMATTER));
+        task.put("priority", priorityLevel.getDisplay());
+        task.put("status", "Chưa hoàn thành");
+        task.put("created_at", now.format(DateTimeFormatter.ISO_DATE_TIME));
+        task.put("last_updated_at", now.format(DateTimeFormatter.ISO_DATE_TIME));
+        task.put("is_recurring", isRecurring);
+
+        if (isRecurring) {
+            task.put("recurrence_pattern", "Chưa xác định");
+        }
+
+        return task;
+    }
+
 
