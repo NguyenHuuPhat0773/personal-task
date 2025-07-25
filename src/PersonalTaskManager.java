@@ -55,20 +55,16 @@ public class PersonalTaskManager{
                                                String dueDateStr, String priorityLevel,
                                                boolean isRecurring) {
 
-        if (title == null || title.trim().isEmpty()) {
-            System.out.println("Lỗi: Tiêu đề không được để trống.");
-            return null;
-        }
-        if (dueDateStr == null || dueDateStr.trim().isEmpty()) {
-            System.out.println("Lỗi: Ngày đến hạn không được để trống.");
-            return null;
+        if (!isTitleValid(title)) {
+            System.out.println("Lỗi: Tiêu đề không được để trống.");
+            return null;
         }
         LocalDate dueDate;
         try {
-            dueDate = LocalDate.parse(dueDateStr, DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-            System.out.println("Lỗi: Ngày đến hạn không hợp lệ. Vui lòng sử dụng định dạng YYYY-MM-DD.");
-            return null;
+            dueDate = parseDueDate(dueDateStr);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Lỗi: " + e.getMessage());
+            return null;
         }
         String[] validPriorities = {"Thấp", "Trung bình", "Cao"};
         boolean isValidPriority = false;
@@ -159,4 +155,20 @@ public class PersonalTaskManager{
             false
         );
     }
+}
+// Kiểm tra tiêu đề có hợp lệ không (không null, không trống)
+private boolean isTitleValid(String title) {
+    return title != null && !title.trim().isEmpty();
+}
+
+// Parse ngày đến hạn từ chuỗi sang LocalDate, ném lỗi nếu không hợp lệ
+private LocalDate parseDueDate(String dueDateStr) {
+    if (dueDateStr == null || dueDateStr.trim().isEmpty()) {
+        throw new IllegalArgumentException("Ngày đến hạn không được để trống.");
+    }
+    try {
+        return LocalDate.parse(dueDateStr, DATE_FORMATTER);
+    } catch (DateTimeParseException e) {
+        throw new IllegalArgumentException("Ngày đến hạn không hợp lệ. Vui lòng sử dụng định dạng YYYY-MM-DD.");
+    }
 }
